@@ -1,13 +1,27 @@
 import * as process from "node:process";
 
-import {CommandsRegistry, registerCommand, runCommand} from "./CommandsRegistry";
-import { handlerLogin } from "./commandHandler";
+import { CommandsRegistry, registerCommand, runCommand } from "./commandsRegistry";
+import {
+    handlerAddFeed,
+    handlerAgg,
+    handlerFeeds,
+    handlerLogin,
+    handlerRegister,
+    handlerReset,
+    handlerUsers
+} from "./commandHandler";
 
-function main()
+async function main(): Promise<void>
 {
     const registry: CommandsRegistry = {};
 
     registerCommand(registry, 'login', handlerLogin);
+    registerCommand(registry, 'register', handlerRegister);
+    registerCommand(registry, 'reset', handlerReset);
+    registerCommand(registry, 'users', handlerUsers);
+    registerCommand(registry, 'agg', handlerAgg);
+    registerCommand(registry, 'addfeed', handlerAddFeed);
+    registerCommand(registry, 'feeds', handlerFeeds);
 
     const input = process.argv.slice(2);
 
@@ -17,9 +31,11 @@ function main()
         process.exit(1);
     }
 
-    const cmd = input.shift();
+    const cmd :string|undefined = input.shift();
 
-    runCommand(registry, cmd, ...input);
+    await runCommand(registry, cmd, ...input);
+
+    process.exit(0);
 }
 
 main();

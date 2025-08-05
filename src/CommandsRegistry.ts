@@ -1,9 +1,6 @@
 import {CommandHandler} from "./commandHandler";
 
-export type CommandsRegistry =
-    {
-        [commandName: string]: (...args: string[]) => void;
-    }
+export type CommandsRegistry = Record<string, CommandHandler>
 
 export function registerCommand(registry: CommandsRegistry,
                                 cmdName: string,
@@ -12,9 +9,12 @@ export function registerCommand(registry: CommandsRegistry,
     registry[cmdName] = handler;
 }
 
-export function runCommand(registry: CommandsRegistry,
-                                cmdName: string,
-                                ...args: string[]): void
+export async function runCommand(registry: CommandsRegistry,
+                                cmdName?: string,
+                                ...args: string[]): Promise<void>
 {
-    registry[cmdName](cmdName, ...args);
+    if (cmdName)
+        await registry[cmdName](cmdName, ...args);
+    else throw new Error("No command provided.");
+
 }

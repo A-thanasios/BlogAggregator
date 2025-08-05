@@ -9,12 +9,14 @@ export type Config =
     }
 
 export function setUser(userName: string): void
-    {
+{
         const config: Config = readConfig();
         config.currentUserName = userName;
         fs.writeFileSync(getConfigFilePath(),
             JSON.stringify(config, null, 2));
-    }
+}
+export function currentUser(): string { return readConfig().currentUserName; }
+
 export function readConfig(): Config
     {
         return validateConfig(fs.readFileSync(getConfigFilePath(), "utf8"));

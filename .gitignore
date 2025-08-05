@@ -1,0 +1,7 @@
+.idea
+
+/src/lib/db/migrations/
+/src/lib/db/migrations/*
+
+/node_modules/
+/node_modules/*
