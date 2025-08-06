@@ -1,13 +1,16 @@
 import { currentUser, setUser } from "./config";
-import { createUser, readAllUsers, readUserByName, resetTableUsers } from "./lib/db/queries/users";
+import { createUser, readAllUsers, readUserByName, resetTableUsers, User } from "./lib/db/queries/users";
 import { fetchFeed } from "./lib/api/RSSFeed";
-import { feeds, users } from "./lib/db/schema";
-import {createFeed, readAllFeeds} from "./lib/db/queries/feeds";
+import {createFeed, Feed, readAllFeeds, readFeedByUrl} from "./lib/db/queries/feeds";
+import {createFeedFollow, deleteFeedFollow, readFeedFollowsForUser} from "./lib/db/queries/follow";
 
 export type CommandHandler = (cmdName: string, ...args: string[]) => Promise<void>;
 
-export type Feed = typeof feeds.$inferSelect;
-export type User = typeof users.$inferSelect;
+export type UserCommandHandler = (
+    cmdName: string,
+    user: User,
+    ...args: string[]
+) => Promise<void>;
 
 export async function handlerLogin(cmdName: string, ...args: string[]): Promise<void>
 {
@@ -86,15 +89,14 @@ export async function handlerAgg(cmdName: string, ...args: string[]): Promise<vo
         catch (error) { console.log(error); }
 }
 
-export async function handlerAddFeed(cmdName: string, ...args: string[]): Promise<void>
+export async function handlerAddFeed(_: string, user: User, ...args: string[]): Promise<void>
 {
     if (args.length < 2) throw  new Error("Add Feed expects a name and an url as an argument.");
     try
     {
-        const user = await readUserByName(currentUser());
         const feed: Feed = await createFeed(args[0], args[1], user.id);
 
-        printFeed(feed, user);
+        await handlerFollow(_, user, feed.url);
     } catch (error) { console.log(error); }
 }
 
@@ -108,13 +110,51 @@ export async function handlerFeeds(cmdName: string, ...args: string[]): Promise<
         for (const user of users)
         {
             if (!user) continue;
-            if (feed.user_id === user.id)
+            if (feed.userId === user.id)
                 console.log(`* ${feed.name} *\n  - ${feed.url}\n  - ${user.name}`)
                 delete feeds[feeds.indexOf(feed)];
         }
     }
 }
 catch (error) { console.log(error); }
+}
+
+export async function handlerFollow(_: string, user: User, ...args: string[]): Promise<void>
+{
+    if (args.length < 1) throw  new Error("Follow expects an url as an argument.");
+    try
+    {
+        const feed: Feed = await readFeedByUrl(args[0]);
+
+        const follow = await createFeedFollow(user.id, feed);
+
+        console.log(follow.feed.name);
+        console.log(currentUser());
+    } catch(error) { console.log(error); }
+}
+
+export async function handlerFollowing(_: string, user: User, ...args: string[]): Promise<void>
+{
+    try
+    {
+        const feeds = await readFeedFollowsForUser(user.id);
+
+        for (const feed of feeds) {
+            if (!feed) continue;
+            console.log(`* ${feed.name} *\n  - ${feed.url}`);
+        }
+    } catch (error) { console.log(error); }
+}
+
+export async function handlerUnfollow(_: string, user: User, ...args: string[]): Promise<void>
+{
+    if (args.length < 1) throw new Error("Unfollow expects a url as an argument.");
+
+    try
+    {
+        const feed: Feed = await readFeedByUrl(args[0]);
+        await deleteFeedFollow(user.id, feed.id);
+    } catch (error) { console.log(error); }
 }
 
 function printFeed(feed: Feed, user: User): void

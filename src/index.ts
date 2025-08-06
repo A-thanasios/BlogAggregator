@@ -1,13 +1,13 @@
 import * as process from "node:process";
 
-import { CommandsRegistry, registerCommand, runCommand } from "./commandsRegistry";
+import {CommandsRegistry, middlewareLoggedIn, registerCommand, runCommand} from "./commandsRegistry";
 import {
     handlerAddFeed,
     handlerAgg,
-    handlerFeeds,
+    handlerFeeds, handlerFollow, handlerFollowing,
     handlerLogin,
     handlerRegister,
-    handlerReset,
+    handlerReset, handlerUnfollow,
     handlerUsers
 } from "./commandHandler";
 
@@ -20,8 +20,11 @@ async function main(): Promise<void>
     registerCommand(registry, 'reset', handlerReset);
     registerCommand(registry, 'users', handlerUsers);
     registerCommand(registry, 'agg', handlerAgg);
-    registerCommand(registry, 'addfeed', handlerAddFeed);
+    registerCommand(registry, 'addfeed', middlewareLoggedIn(handlerAddFeed));
     registerCommand(registry, 'feeds', handlerFeeds);
+    registerCommand(registry, 'follow', middlewareLoggedIn(handlerFollow));
+    registerCommand(registry, 'following', middlewareLoggedIn(handlerFollowing));
+    registerCommand(registry, 'unfollow', middlewareLoggedIn(handlerUnfollow));
 
     const input = process.argv.slice(2);
 
