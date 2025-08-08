@@ -1,6 +1,6 @@
 import { db } from "..";
 import { feeds } from "../schema";
-import { eq } from "drizzle-orm";
+import {eq, sql} from "drizzle-orm";
 
 export type Feed = typeof feeds.$inferSelect;
 
@@ -34,4 +34,25 @@ export async function readFeedByUrl(url: string): Promise<Feed>
     return result;
 }
 
+export async function readNextFeedToFetch(): Promise<Feed>
+{
+    const [result] = await db
+        .select()
+        .from(feeds)
+        .orderBy(feeds.lastFetchedAt).limit(1);
+    return result;
+}
+
+export async function markFeedFetched(id: string)
+{
+    await db
+        .update(feeds)
+        .set({ updatedAt: sql`NOW()`, lastFetchedAt: sql`NOW()` })
+
+        .where(eq(feeds.id, id));
+    return readFeedById(id);
+}
+
 export async function readAllFeeds() { return db.select().from(feeds);}
+
+
